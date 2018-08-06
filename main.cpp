@@ -6,10 +6,8 @@
 #include <string>
 #include <vector>
 using namespace std;
-
 #include "DES.h"
 
-#include <pthread.h>
 
 /*
  * This program is a command line utility to test variations on a bad DES key to find the
@@ -30,8 +28,8 @@ void printUsage(const char *name)
 
 // Converts a string of hex digits into the binary data it represents.  Output string is
 // assumed to be large enough to hold the data (half the size of the input string).
-void Hex2Bin(string &input, unsigned char* output, int &len);
-void Bin2Hex(unsigned char* input, int len, string &output);
+void Hex2Bin(const string &input, vector<unsigned char> &output);
+void Bin2Hex(const vector<unsigned char> &input, string &output);
 
 // exit somewhat gracefully with error information
 void fail(const char *str)
@@ -43,9 +41,12 @@ void fail(const char *str)
 }
 
 // do a binary comparison of two blocks of data of the given length, returns true for equal
-bool BCompare(const unsigned char *one, const unsigned char *two, int len)
+bool BCompare(const vector<unsigned char> &one, const vector<unsigned char> &two)
 {
-	for(int i = 0; i < len; ++i)
+	size_t len = one.size();
+	if(len != two.size()) return false;
+
+	for(size_t i = 0; i < len; ++i)
 		if(one[i] != two[i]) return false;
 	return true;
 }
@@ -81,22 +82,23 @@ int main(int argc, char **argv)
 	bkey.resize(24, 0);
 
 	// KCV check; block of zeros to encrypt, block to receive encrypted data
-	unsigned char inblock[8] = {0};
-	unsigned char outblock[8] = {0};
-	int blocklen = 8;
-	int keylen;
-	int kcvlen;
+	vector<unsigned char> inblock;
+	vector<unsigned char> outblock;
+
+	// DES works on 8 byte blocks
+	inblock.resize(8, (unsigned char)0);
+	outblock.resize(8, (unsigned char)0);
 
 	// convert from entered hex strings to binary for DES algorithm
-	Hex2Bin(key, &bkey[0], keylen);
-	bkey.resize(keylen);
+	Hex2Bin(key, bkey);
 
+	int blocklen = 8;
 	// generate the KCV of the given key
-	encryptECB(&bkey[0], keylen, inblock, blocklen, outblock);
+	encryptECB(&bkey[0], bkey.size(), &inblock[0], blocklen, &outblock[0]);
 
 	string keyout, blockout;
-	Bin2Hex(&bkey[0], keylen, keyout);
-	Bin2Hex(outblock, blocklen, blockout);
+	Bin2Hex(bkey, keyout);
+	Bin2Hex(outblock, blockout);
 
 	// if we weren't given a KCV to compare against, print out the calculated KCV and exit
 	if(kcv == "")
@@ -111,10 +113,9 @@ int main(int argc, char **argv)
 
 	vector<unsigned char> bkcv;
 	bkcv.resize(8, 0);
-	Hex2Bin(kcv, &bkcv[0], kcvlen);
-	bkcv.resize(kcvlen);
+	Hex2Bin(kcv, bkcv);
 
-	if(BCompare(&bkcv[0], outblock, kcvlen))
+	if(BCompare(bkcv, outblock))
 	{
 		printf("Key matches KCV\n");
 		exit(0);
@@ -191,26 +192,30 @@ unsigned char ByteFromStr(const char *input)
 }
 
 // convert a string of hex data into binary
-void Hex2Bin(string &input, unsigned char* output, int &len)
+void Hex2Bin(const string &input, vector<unsigned char> &output)
 {
-	len = input.length();
+	size_t len = input.length();
 
 	// must be an even number of characters
 	if (len % 2)
 		fail("Hex input must be an even number of digits");
 
+	output.resize(len / 2);
+
 	for (int i = 0; i < len; i += 2)
-    	output[i / 2] = ByteFromStr(&(input.c_str())[i]);
-	len /= 2;
+	    	output[i / 2] = ByteFromStr(&(input.c_str())[i]);
 }
 
 // convert a string of binary data into a hex string
-void Bin2Hex(unsigned char* input, int len, string &output)
+void Bin2Hex(const vector<unsigned char> &input, string &output)
 {
+	size_t len = input.size();
 	output = "";
-	for(int i = 0; i < len; ++i)
+
+	for(size_t i = 0; i < len; ++i)
 	{
-		char buff[8] = {(char)0};
+		// buffer to print 2 hex digits and a newline into
+		char buff[3] = {(char)0};
 		sprintf(buff, "%02X", input[i]);
 		output += buff;
 	}
