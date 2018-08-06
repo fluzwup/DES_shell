@@ -109,6 +109,19 @@ int main(int argc, char **argv)
 	// if we were given a key and KCV, first check to see if we have a match, and if not, 
 	// see if we can find a match
 
+	vector<unsigned char> bkcv;
+	bkcv.resize(8, 0);
+	Hex2Bin(kcv, &bkcv[0], kcvlen);
+	bkcv.resize(kcvlen);
+
+	if(BCompare(&bkcv[0], outblock, kcvlen))
+	{
+		printf("Key matches KCV\n");
+		exit(0);
+	} 
+	else
+		printf("Key does not match given KCV\n");
+
 	// Your code here
 
 	return 0;
