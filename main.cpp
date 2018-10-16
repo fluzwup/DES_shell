@@ -111,10 +111,19 @@ int main(int argc, char **argv)
 	// if we were given a key and KCV, first check to see if we have a match, and if not, 
 	// see if we can find a match
 
+	// BCompare does a binary compare; this isn't needed right now, as we have everything
+	// in hexidecimal strings, but when we start searching, we'll want to do the comparison
+	// in binary to save time.
+	
+	// get the input KCV in binary
 	vector<unsigned char> bkcv;
-	bkcv.resize(8, 0);
-	Hex2Bin(blockout, bkcv);
+	bkcv.resize(3, 0);
+	Hex2Bin(kcv, bkcv);
 
+	// trim the output block down to 3 bytes
+	outblock.resize(3);
+
+	// do a binary comparison of the target KCV and the KCV we generated from the key
 	if(BCompare(bkcv, outblock))
 	{
 		printf("Key matches KCV\n");
