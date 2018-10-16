@@ -13,8 +13,8 @@ LOCATIONS =  -L/usr/local/lib  -L/usr/lib
 
 LIBRARIES =   -lpthread
 
-#CXXFLAGS = -ggdb 
-CXXFLAGS = -O2  
+CXXFLAGS = -ggdb 
+#CXXFLAGS = -O2  
 CXX = g++ ${CXXFLAGS} -DREENTRANT -D_REENTRANT 
 
 .SUFFIXES:      .cpp .o

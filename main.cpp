@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 
 	vector<unsigned char> bkcv;
 	bkcv.resize(8, 0);
-	Hex2Bin(kcv, bkcv);
+	Hex2Bin(blockout, bkcv);
 
 	if(BCompare(bkcv, outblock))
 	{
